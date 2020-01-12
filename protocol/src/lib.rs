@@ -1,5 +1,7 @@
 use std::ops::Deref;
 
+mod packets;
+
 #[derive(Debug)]
 pub enum Packet {
     Handshaking(HandshakingPacket),

@@ -120,6 +120,7 @@ impl Decoder for MinecraftCodec {
     type Error = Error;
 
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Error> {
+        println!("{:?}", &src[..]);
         // Read the size of the packet
         if self.next_size.is_none() {
             self.next_size = VarInt::read(src)?.map(|n| n.0 as usize);

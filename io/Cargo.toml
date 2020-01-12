@@ -1,5 +1,5 @@
 [package]
-name = "protocol"
+name = "io"
 version = "0.1.0"
 authors = ["LightDiscord <root@arnaud.sh>"]
 edition = "2018"
@@ -8,5 +8,5 @@ edition = "2018"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
-io = { path = "../io" }
+failure = "0.1"
 bytes = "0.5"
