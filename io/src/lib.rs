@@ -1,15 +1,34 @@
+#![feature(try_trait)]
+
 use serde::de::{self, Visitor, SeqAccess, DeserializeSeed};
-use bytes::{BytesMut, Buf};
+use bytes::{Bytes, Buf};
 
 pub mod derive;
 pub mod error;
+pub mod codec;
+
+mod macros;
 
 use crate::error::Error;
 
 type Result<T> = std::result::Result<T, Error>;
 
-pub struct MyDeserializer<'a> {
-    pub input: &'a mut BytesMut
+pub struct MyDeserializer {
+    pub input: Bytes
+}
+
+impl From<Bytes> for MyDeserializer {
+    fn from(src: Bytes) -> Self {
+        MyDeserializer { input: src }
+    }
+}
+
+use serde::Deserialize;
+
+impl<'a> MyDeserializer {
+    pub fn deserialize<T: Deserialize<'a>>(&'a mut self) -> Result<T> {
+        T::deserialize(self)
+    }
 }
 
 macro_rules! deserialize_unimplemented {
@@ -22,7 +41,7 @@ macro_rules! deserialize_unimplemented {
     }
 }
 
-impl<'de, 'a> de::Deserializer<'de> for &'a mut MyDeserializer<'de> {
+impl<'de, 'a> de::Deserializer<'de> for &'a mut MyDeserializer {
     type Error = Error;
 
     fn deserialize_any<V: Visitor<'de>>(self, _visitor: V) -> Result<V::Value> {
@@ -53,7 +72,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut MyDeserializer<'de> {
 
     fn deserialize_string<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value> {
         let length = derive::var::varint::deserialize(&mut *self)? as usize;
-        let string = String::from_utf8((&self.input[..length]).to_vec())?;
+        let string = String::from_utf8(self.input.slice(..length).to_vec())?;
         self.input.advance(length);
         visitor.visit_string(string)
     }
@@ -67,11 +86,11 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut MyDeserializer<'de> {
     }
 
     fn deserialize_seq<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value> {
-        struct Access<'a, 'b> {
-            deserializer: &'a mut MyDeserializer<'b>
+        struct Access<'a> {
+            deserializer: &'a mut MyDeserializer
         }
 
-        impl <'de, 'a> SeqAccess<'de> for Access<'a, 'de> {
+        impl <'de, 'a> SeqAccess<'de> for Access<'a> {
             type Error = Error;
 
             fn next_element_seed<T: DeserializeSeed<'de>>(&mut self, seed: T) -> Result<Option<T::Value>> {
@@ -91,12 +110,12 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut MyDeserializer<'de> {
     }
 
     fn deserialize_tuple<V: Visitor<'de>>(self, len: usize, visitor: V) -> Result<V::Value> {
-        struct Access<'a, 'b> {
-            deserializer: &'a mut MyDeserializer<'b>,
+        struct Access<'a> {
+            deserializer: &'a mut MyDeserializer,
             len: usize
         }
 
-        impl<'de, 'a> SeqAccess<'de> for Access<'a, 'de> {
+        impl<'de, 'a> SeqAccess<'de> for Access<'a> {
             type Error = Error;
 
             fn next_element_seed<T: DeserializeSeed<'de>>(&mut self, seed: T) -> Result<Option<T::Value>> {

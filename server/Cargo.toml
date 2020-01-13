@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 protocol = { path = "../protocol" }
+io = { path = "../io" }
 
 tokio = { version = "0.2", features = ["full"] }
 tokio-util = { version = "0.2", features = ["codec"] }

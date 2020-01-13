@@ -3,6 +3,7 @@ use serde::de::{self, Visitor, SeqAccess};
 use std::fmt;
 use std::ops::Deref;
 use std::marker::PhantomData;
+use crate::Error;
 
 pub struct Var<T>(T);
 
@@ -11,6 +12,23 @@ impl<T> Deref for Var<T> {
 
     fn deref(&self) -> &T {
         &self.0
+    }
+}
+
+impl Var<i32> {
+    pub(crate) fn count(bytes: &[u8]) -> Result<Option<usize>, Error> {
+        for idx in 0..5 {
+            let byte = match bytes.get(idx) {
+                Some(byte) => byte,
+                None => return Ok(None)
+            };
+
+            if (byte & 0b10000000) == 0 {
+                return Ok(Some(idx + 1));
+            }
+        }
+
+        Err(de::Error::custom(Error::VarIntTooBig))
     }
 }
 
@@ -32,13 +50,16 @@ pub mod varint {
             let mut result: i32 = 0;
 
             loop {
-                let byte: u8 = seq.next_element()?.unwrap();
+                let byte: u8 = seq.next_element()?
+                    .ok_or(Error::NoneError)
+                    .map_err(de::Error::custom)?;
+
                 let value = byte & 0b01111111;
                 result |= (value as i32) << (7 * idx);
                 idx += 1;
 
                 if idx > 5 {
-                    return Err(de::Error::custom("VarInt is too big"));
+                    return Err(de::Error::custom(Error::VarIntTooBig));
                 }
                 if (byte & 0b10000000) == 0 { break; }
             }

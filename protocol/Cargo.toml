@@ -10,3 +10,4 @@ edition = "2018"
 serde = { version = "1.0", features = ["derive"] }
 io = { path = "../io" }
 bytes = "0.5"
+failure = "0.1"
