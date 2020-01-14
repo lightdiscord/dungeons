@@ -7,12 +7,12 @@ use crate::types::Var;
 type Result<T> = std::result::Result<T, Error>;
 
 macro_rules! serialize_unimplemented {
-    ($($fn:ident$(($($type:ty),*))*),*) => {
-        $(
-            fn $fn(self $(,$(_: $type),*)*) -> Result<Self::Ok> {
-                unimplemented!()
+    ($($return:ty => [$($fn:ident$(($($type:ty),*))*),*]),*) => {
+        $($(
+            fn $fn(self $(,$(_: $type),*)*) -> Result<$return> {
+                unimplemented!(stringify!($fn))
             }
-         )*
+         )*)*
     }
 }
 
@@ -52,45 +52,35 @@ impl ser::Serializer for &'_ mut Serializer {
     }
 
     serialize_unimplemented! {
-        serialize_bool(bool),
-        serialize_char(char),
-        serialize_f32(f32),
-        serialize_f64(f64),
-        serialize_i16(i16),
-        serialize_u16(u16),
-        serialize_i32(i32),
-        serialize_i64(i64),
-        serialize_i8(i8),
-        serialize_unit_struct(&str),
-        serialize_u32(u32),
-        serialize_u64(u64),
-        serialize_bytes(&[u8]),
-        serialize_unit,
-        serialize_none,
-        serialize_unit_variant(&'static str, u32, &'static str)
-    }
+        Self::Ok => [
+            serialize_bool(bool),
+            serialize_char(char),
+            serialize_f32(f32),
+            serialize_f64(f64),
+            serialize_i16(i16),
+            serialize_u16(u16),
+            serialize_i32(i32),
+            serialize_i64(i64),
+            serialize_i8(i8),
+            serialize_unit_struct(&str),
+            serialize_u32(u32),
+            serialize_u64(u64),
+            serialize_bytes(&[u8]),
+            serialize_unit,
+            serialize_none,
+            serialize_unit_variant(&'static str, u32, &'static str)
+        ],
 
-    fn serialize_map(self, _: Option<usize>) -> Result<Self::SerializeMap> {
-        unimplemented!()
-    }
-
-    fn serialize_tuple(self, _: usize) -> Result<Self::SerializeTuple> {
-        unimplemented!()
+        Self => [
+            serialize_map(Option<usize>),
+            serialize_tuple(usize),
+            serialize_tuple_struct(&'static str, usize),
+            serialize_struct_variant(&'static str, u32, &'static str, usize),
+            serialize_tuple_variant(&'static str, u32, &'static str, usize)
+        ]
     }
 
     fn serialize_some<T: ?Sized>(self, _: &T) -> Result<Self::Ok> {
-        unimplemented!()
-    }
-
-    fn serialize_tuple_struct(self, _: &'static str, _: usize) -> Result<Self::SerializeTupleStruct> {
-        unimplemented!()
-    }
-
-    fn serialize_struct_variant(self, _: &'static str, _: u32, _: &'static str, _: usize) -> Result<Self::SerializeStructVariant> {
-        unimplemented!()
-    }
-
-    fn serialize_tuple_variant(self, _: &'static str, _: u32, _: &'static str, _: usize) -> Result<Self::SerializeTupleVariant> {
         unimplemented!()
     }
 
