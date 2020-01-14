@@ -1,6 +1,6 @@
 use std::fmt::{self, Display};
 use std::error::Error as StdError;
-use serde::de;
+use serde::{de, ser};
 
 use std::io::Error as IoError;
 use std::option::NoneError;
@@ -24,6 +24,12 @@ impl Display for Error {
 }
 
 impl de::Error for Error {
+    fn custom<T: Display>(message: T) -> Self {
+        Error::Custom(message.to_string())
+    }
+}
+
+impl ser::Error for Error {
     fn custom<T: Display>(message: T) -> Self {
         Error::Custom(message.to_string())
     }

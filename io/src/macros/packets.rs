@@ -5,6 +5,7 @@ macro_rules! packets {
             $id:expr => $packet:ident
         ),*
     ) => {
+        use $crate::types::Var;
         use serde::de::{self, Deserializer, Visitor, SeqAccess};
         use std::fmt;
 

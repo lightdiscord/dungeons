@@ -2,8 +2,8 @@ use tokio_util::codec::{Decoder, Encoder};
 use bytes::{BytesMut, Bytes, Buf};
 use std::io::Error as IoError;
 
-use crate::derive::var::Var;
-use crate::MyDeserializer;
+use crate::types::var::Var;
+use crate::Deserializer;
 use crate::Error;
 
 enum DecodeState {
@@ -27,7 +27,7 @@ impl SizedCodec {
             None => return Ok(None)
         };
 
-        let packet_length: Var<i32> = MyDeserializer::from(src.split_to(header_length).to_bytes()).deserialize()?;
+        let packet_length: Var<i32> = Deserializer::from(src.split_to(header_length).to_bytes()).deserialize()?;
         let packet_length = *packet_length as usize;
 
         src.reserve(packet_length);
