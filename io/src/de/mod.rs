@@ -5,7 +5,7 @@ mod traits;
 pub struct Deserializer(Bytes);
 
 #[cfg(test)]
-pub mod tests {
+mod tests {
     use serde::Deserialize;
     use crate::types::Var;
     use crate::Error;

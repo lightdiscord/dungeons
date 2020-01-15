@@ -1,9 +1,11 @@
 use serde::Deserialize;
-use io::serverbound_packets;
+use io::packets;
 
-#[derive(Debug, PartialEq, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Request;
 
-serverbound_packets! {
-    0x00 => Request
+packets! {
+    serverbound {
+        0x00 => Request
+    }
 }

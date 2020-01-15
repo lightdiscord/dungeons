@@ -123,7 +123,7 @@ where
 }
 
 #[cfg(test)]
-pub mod tests {
+mod tests {
     use super::*;
 
     use bytes::Bytes;

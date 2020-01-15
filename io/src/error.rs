@@ -12,6 +12,7 @@ use serde_json::Error as JsonError;
 pub enum Error {
     Custom(String),
 
+    UnknownPacket,
     VarIntTooBig,
 
     NoneError,

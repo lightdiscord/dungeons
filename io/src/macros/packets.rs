@@ -1,82 +1,166 @@
 #[macro_export]
-macro_rules! serverbound_packets {
+macro_rules! packets {
     (
-        $(
-            $id:expr => $packet:ident
-        ),*
+        $(#[$enum_meta:meta])*
+        common {
+            $($packet:ident),+
+        }
     ) => {
-        use $crate::types::Var;
-        use serde::de::{self, Deserializer, Visitor, SeqAccess};
-        use std::fmt;
-
-        #[derive(Debug, PartialEq)]
+        $(#[$enum_meta])*
+        #[derive(Debug)]
         pub enum Packet {
             $($packet($packet)),*
         }
+    };
 
-        struct PacketVisitor;
+    (
+        $(#[$enum_meta:meta])*
+        serverbound {
+            $($id:expr => $packet:ident),+
+        }
+    ) => {
+        packets! {
+            $(#[$enum_meta])*
+            common { $($packet),+ }
+        }
 
-        impl<'de> Visitor<'de> for PacketVisitor {
-            type Value = Packet;
+        mod __impl_packets_traits {
+            use serde::de::{self, Visitor, SeqAccess, Deserialize, Deserializer};
+            use $crate::types::Var;
+            use $crate::Error;
+            use super::Packet;
+            use std::fmt;
 
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("a minecraft packet id and data")
+            struct PacketVisitor;
+
+            impl<'de> Visitor<'de> for PacketVisitor {
+                type Value = Packet;
+
+                fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                    formatter.write_str("a minecraft packet id and data")
+                }
+
+                fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+                where
+                    A: SeqAccess<'de>
+                {
+                    match *seq.next_element::<Var<i32>>()?.unwrap() {
+                        $($id => Ok(Packet::$packet(seq.next_element()?.unwrap()))),+,
+                        _ => Err(de::Error::custom(Error::UnknownPacket))
+                    }
+                }
             }
 
-            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-            where
-                A: SeqAccess<'de>
-            {
-                match *seq.next_element::<Var<i32>>()?.unwrap() {
-                    $($id => Ok(Packet::$packet(seq.next_element()?.unwrap()))),*,
-                    _ => Err(de::Error::custom("Unknown packet"))
+            impl<'de> Deserialize<'de> for Packet {
+                fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+                where
+                    D: Deserializer<'de>
+                {
+                    deserializer.deserialize_tuple(2, PacketVisitor)
                 }
             }
         }
+    };
 
-        impl<'de> Deserialize<'de> for Packet {
-            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-            where
-                D: Deserializer<'de>
-            {
-                deserializer.deserialize_tuple(2, PacketVisitor)
+    (
+        $(#[$enum_meta:meta])*
+        clientbound {
+            $($id:expr => $packet:ident),+
+        }
+    ) => {
+        packets! {
+            $(#[$enum_meta])*
+            common { $($packet),+ }
+        }
+
+        mod __impl_packets_traits {
+            use serde::ser::{Serialize, Serializer, SerializeTuple};
+            use $crate::types::Var;
+            use super::Packet;
+
+            impl Serialize for Packet {
+                fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+                where
+                    S: Serializer
+                {
+
+                    let mut tuple = serializer.serialize_tuple(2)?;
+                    match self {
+                        $(Packet::$packet(packet) => {
+                            tuple.serialize_element(&Var($id))?;
+                            tuple.serialize_element(&packet)?;
+                        }),+
+                    }
+                    tuple.end()
+                }
             }
         }
-    }
+    };
 }
 
-#[macro_export]
-macro_rules! clientbound_packets {
-    (
-        $(
-            $id:expr => $packet:ident
-        ),+
-    ) => {
-        use $crate::types::Var;
-        use std::fmt;
-        use serde::ser;
+#[cfg(test)]
+mod tests {
+    use serde::{Deserialize, Serialize};
+    use crate::{Deserializer, Serializer, Error};
+    use crate::types::Var;
 
-        #[derive(Debug)]
-        pub enum Packet {
-            $($packet($packet)),+
+    #[derive(Debug, Deserialize, Serialize, PartialEq)]
+    pub struct PacketData {
+        number: Var<i32>,
+        another_number: Var<i32>,
+        bit: u8
+    }
+
+    fn packet_data() -> PacketData {
+        PacketData {
+            number: Var(2),
+            another_number: Var(255),
+            bit: 42
+        }
+    }
+
+    const PACKET_ID: u8 = 101;
+    const EXPECTED_PACKET_BYTES: &'static [u8] = &[PACKET_ID, 2, 0xff, 0x01, 42];
+
+    mod serverbound {
+        use super::*;
+        use bytes::Bytes;
+
+        packets! {
+            #[derive(PartialEq)]
+            serverbound {
+                101 => PacketData
+            }
         }
 
-        impl ser::Serialize for Packet {
-            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-            where
-                S: ser::Serializer
-            {
-                use ser::SerializeTuple;
+        #[test]
+        fn test_packet_deserialization() -> Result<(), Error> {
+            let packet: Packet = Deserializer::from(Bytes::from(EXPECTED_PACKET_BYTES)).deserialize()?;
+            
+            assert_eq!(packet, Packet::PacketData(packet_data()));
 
-                let mut tuple = serializer.serialize_tuple(2)?;
-                match self {
-                    $(Packet::$packet(packet) => {
-                        tuple.serialize_element(&Var($id))?;
-                        tuple.serialize_element(&packet)?;
-                    }),+
-                }
-                tuple.end()
+            Ok(())
+        }
+    }
+
+    mod clientbound {
+        use super::*;
+
+        packets! {
+            #[derive(PartialEq)]
+            clientbound {
+                101 => PacketData
             }
+        }
+
+        #[test]
+        fn test_packet_deserialization() -> Result<(), Error> {
+            let mut serializer = Serializer::default();
+            let _ = serializer.serialize(&Packet::PacketData(packet_data()))?;
+            
+            assert_eq!(serializer.as_ref(), EXPECTED_PACKET_BYTES);
+
+            Ok(())
         }
     }
 }

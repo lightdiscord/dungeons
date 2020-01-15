@@ -1,5 +1,5 @@
 use serde::Serialize;
-use io::clientbound_packets;
+use io::packets;
 
 #[derive(Debug, Serialize)]
 pub struct JsonResponseVersion {
@@ -39,6 +39,8 @@ pub struct Response {
     pub json_response: JsonResponse
 }
 
-clientbound_packets! {
-    0x00 => Response
+packets! {
+    clientbound {
+        0x00 => Response
+    }
 }

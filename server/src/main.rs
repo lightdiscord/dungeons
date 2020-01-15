@@ -8,7 +8,6 @@ use std::io;
 
 use tokio::stream::StreamExt;
 use tokio::net::{TcpStream, TcpListener};
-use tokio_util::codec::Decoder;
 
 use ::io::Deserializer;
 
@@ -17,6 +16,7 @@ const ADDRESS: &'static str = "127.0.0.1:25565";
 use ::io::codec::sized::SizedCodec;
 use ::io::error::Error as MyError;
 
+#[allow(dead_code)]
 enum State {
     Handshaking,
     Login,
@@ -71,13 +71,9 @@ async fn process_stream(stream: TcpStream) -> Result<(), MyError> {
                             }
                         });
 
-                        println!("responseA");
-
                         use ::io::Serializer;
                         let mut serializer = Serializer::default();
-                        println!("responseB");
                         serializer.serialize(&response)?;
-                        println!("responseC");
                         frames.send(serializer.into()).await?;
                     }
                 }

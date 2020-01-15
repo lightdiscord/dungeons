@@ -6,7 +6,7 @@ mod traits;
 pub struct Serializer(BytesMut);
 
 #[cfg(test)]
-pub mod tests {
+mod tests {
     use serde::Serialize;
     use crate::types::Var;
     use crate::Error;
