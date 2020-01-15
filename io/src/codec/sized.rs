@@ -62,11 +62,22 @@ impl Decoder for SizedCodec {
     }
 }
 
+use crate::Serializer;
+
 impl Encoder for SizedCodec {
     type Item = Bytes;
     type Error = IoError;
 
-    fn encode(&mut self, _item: Self::Item, _dest: &mut BytesMut) -> Result<(), Self::Error> {
-        unimplemented!()
+    fn encode(&mut self, item: Self::Item, dest: &mut BytesMut) -> Result<(), Self::Error> {
+        let packet_header: Bytes = {
+            let mut serializer = Serializer::default();
+            serializer.serialize(&Var(item.len() as i32)).unwrap();
+            serializer.into()
+        };
+
+        dest.reserve(packet_header.len() + item.len());
+        dest.extend_from_slice(&packet_header);
+        dest.extend_from_slice(&item);
+        Ok(())
     }
 }

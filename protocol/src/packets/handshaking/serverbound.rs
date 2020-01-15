@@ -1,6 +1,6 @@
 use serde::Deserialize;
 use std::convert::TryFrom;
-use io::packets;
+use io::serverbound_packets;
 
 use crate::error::Error;
 
@@ -32,6 +32,6 @@ pub struct Handshake {
     pub next_state: NextState
 }
 
-packets! {
+serverbound_packets! {
     0x00 => Handshake
 }

@@ -1,5 +1,5 @@
 use serde::Serialize;
-use bytes::BytesMut;
+use bytes::{Bytes, BytesMut, Buf};
 use crate::Error;
 
 pub use super::Serializer;
@@ -25,5 +25,11 @@ impl Serializer {
 impl AsRef<BytesMut> for Serializer {
     fn as_ref(&self) -> &BytesMut {
         &self.0
+    }
+}
+
+impl Into<Bytes> for Serializer {
+    fn into(mut self) -> Bytes {
+        self.0.to_bytes()
     }
 }

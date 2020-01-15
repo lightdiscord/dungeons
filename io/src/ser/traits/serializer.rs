@@ -43,7 +43,11 @@ impl ser::Serializer for &'_ mut Serializer {
     }
 
     fn serialize_struct(self, _: &'static str, len: usize) -> Result<Self::SerializeStruct> {
-        self.serialize_seq(Some(len))
+        self.serialize_tuple(len)
+    }
+
+    fn serialize_tuple(self, _: usize) -> Result<Self::SerializeTuple> {
+        Ok(self)
     }
 
 
@@ -73,7 +77,6 @@ impl ser::Serializer for &'_ mut Serializer {
 
         Self => [
             serialize_map(Option<usize>),
-            serialize_tuple(usize),
             serialize_tuple_struct(&'static str, usize),
             serialize_struct_variant(&'static str, u32, &'static str, usize),
             serialize_tuple_variant(&'static str, u32, &'static str, usize)

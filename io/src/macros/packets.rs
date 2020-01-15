@@ -1,5 +1,5 @@
 #[macro_export]
-macro_rules! packets {
+macro_rules! serverbound_packets {
     (
         $(
             $id:expr => $packet:ident
@@ -40,6 +40,42 @@ macro_rules! packets {
                 D: Deserializer<'de>
             {
                 deserializer.deserialize_tuple(2, PacketVisitor)
+            }
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! clientbound_packets {
+    (
+        $(
+            $id:expr => $packet:ident
+        ),+
+    ) => {
+        use $crate::types::Var;
+        use std::fmt;
+        use serde::ser;
+
+        #[derive(Debug)]
+        pub enum Packet {
+            $($packet($packet)),+
+        }
+
+        impl ser::Serialize for Packet {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: ser::Serializer
+            {
+                use ser::SerializeTuple;
+
+                let mut tuple = serializer.serialize_tuple(2)?;
+                match self {
+                    $(Packet::$packet(packet) => {
+                        tuple.serialize_element(&Var($id))?;
+                        tuple.serialize_element(&packet)?;
+                    }),+
+                }
+                tuple.end()
             }
         }
     }
