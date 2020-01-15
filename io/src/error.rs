@@ -5,6 +5,8 @@ use serde::{de, ser};
 use std::io::Error as IoError;
 use std::option::NoneError;
 use std::string::FromUtf8Error;
+use std::str::Utf8Error;
+use serde_json::Error as JsonError;
 
 #[derive(Debug)]
 pub enum Error {
@@ -14,7 +16,8 @@ pub enum Error {
 
     NoneError,
     IoError(IoError),
-    Utf8Error(FromUtf8Error)
+    Utf8Error(Utf8Error),
+    JsonError(JsonError)
 }
 
 impl Display for Error {
@@ -37,6 +40,12 @@ impl ser::Error for Error {
 
 impl From<FromUtf8Error> for Error {
     fn from(error: FromUtf8Error) -> Self {
+        error.utf8_error().into()
+    }
+}
+
+impl From<Utf8Error> for Error {
+    fn from(error: Utf8Error) -> Self {
         Error::Utf8Error(error)
     }
 }

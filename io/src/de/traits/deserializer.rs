@@ -37,24 +37,35 @@ macro_rules! deserialize_simple {
 
 struct SeqAccess<'a>(&'a mut Deserializer);
 
-impl <'de> de::SeqAccess<'de> for SeqAccess<'_> {
+impl<'de, 'a> de::SeqAccess<'de> for SeqAccess<'a> {
     type Error = Error;
 
-    fn next_element_seed<T: DeserializeSeed<'de>>(&mut self, seed: T) -> Result<Option<T::Value>> {
+    fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>>
+    where
+        T: DeserializeSeed<'de>
+    {
         Ok(Some(T::deserialize(seed, &mut *self.0)?))
     }
 }
 
-impl<'de> de::Deserializer<'de> for &'_ mut Deserializer {
+impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer {
     type Error = Error;
 
     fn deserialize_string<V>(self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>
     {
-        let length = *(&mut *self).deserialize::<Var<i32>>()? as usize;
-        let string = String::from_utf8(self.0.split_to(length).to_vec())?;
-        visitor.visit_string(string)
+        self.deserialize_str(visitor)
+    }
+
+    fn deserialize_str<V>(self, visitor: V) -> Result<V::Value>
+    where
+        V: Visitor<'de>
+    {
+        let length = *self.deserialize::<Var<i32>>()? as usize;
+        let bytes = self.0.split_to(length);
+        let string = std::str::from_utf8(&bytes)?;
+        visitor.visit_str(string)
     }
 
     fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value>
@@ -100,7 +111,6 @@ impl<'de> de::Deserializer<'de> for &'_ mut Deserializer {
         deserialize_ignored_any,
         deserialize_map,
         deserialize_option,
-        deserialize_str,
         deserialize_u32,
         deserialize_u64,
         deserialize_bytes,
