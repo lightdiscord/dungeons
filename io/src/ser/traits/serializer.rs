@@ -31,7 +31,11 @@ impl ser::Serializer for &'_ mut Serializer {
 
     fn serialize_u8(self, value: u8) -> Result<()> {
         self.0.put_u8(value);
+        Ok(())
+    }
 
+    fn serialize_u64(self, value: u64) -> Result<()> {
+        self.0.put_u64(value);
         Ok(())
     }
 
@@ -68,7 +72,6 @@ impl ser::Serializer for &'_ mut Serializer {
             serialize_i8(i8),
             serialize_unit_struct(&str),
             serialize_u32(u32),
-            serialize_u64(u64),
             serialize_bytes(&[u8]),
             serialize_unit,
             serialize_none,

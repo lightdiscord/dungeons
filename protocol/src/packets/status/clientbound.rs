@@ -39,8 +39,14 @@ pub struct Response {
     pub json_response: JsonResponse
 }
 
+#[derive(Debug, Serialize)]
+pub struct Pong {
+    pub payload: u64
+}
+
 packets! {
     clientbound {
-        0x00 => Response
+        0x00 => Response,
+        0x01 => Pong
     }
 }

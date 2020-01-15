@@ -112,7 +112,6 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer {
         deserialize_map,
         deserialize_option,
         deserialize_u32,
-        deserialize_u64,
         deserialize_bytes,
         deserialize_unit,
         deserialize_newtype_struct(StaticStr),
@@ -122,6 +121,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer {
 
     deserialize_simple! {
         (deserialize_u8, visit_u8, get_u8),
-        (deserialize_u16, visit_u16, get_u16)
+        (deserialize_u16, visit_u16, get_u16),
+        (deserialize_u64, visit_u64, get_u64)
     }
 }

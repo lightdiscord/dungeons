@@ -75,10 +75,19 @@ async fn process_stream(stream: TcpStream) -> Result<(), MyError> {
                         let mut serializer = Serializer::default();
                         serializer.serialize(&response)?;
                         frames.send(serializer.into()).await?;
+                    },
+                    StatusPacket::Ping(ping) => {
+                        use protocol::packets::status::clientbound as status_clientbound;
+                        let response = status_clientbound::Packet::Pong(status_clientbound::Pong {
+                            payload: ping.payload
+                        });
+
+                        use ::io::Serializer;
+                        let mut serializer = Serializer::default();
+                        serializer.serialize(&response)?;
+                        frames.send(serializer.into()).await?;
                     }
                 }
-
-                println!("packet = {:?}", packet);
             },
             _ => unimplemented!()
         }
