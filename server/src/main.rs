@@ -1,15 +1,12 @@
-#![feature(try_trait)]
+#![feature(try_trait, async_closure)]
 
-use protocol::packets::handshaking::serverbound::{Packet as HandshakingPacket, NextState};
-use protocol::packets::status::serverbound::Packet as StatusPacket;
-use futures::SinkExt;
+mod handlers;
 
 use std::io;
 
-use tokio::stream::StreamExt;
+use futures::future;
+use futures::stream::StreamExt;
 use tokio::net::{TcpStream, TcpListener};
-
-use ::io::Deserializer;
 
 const ADDRESS: &'static str = "127.0.0.1:25565";
 
@@ -24,75 +21,26 @@ enum State {
     Play
 }
 
+use tokio::sync::mpsc;
+
+use crate::handlers::Handler;
 use tokio_util::codec::Framed;
+use ::io::Connection;
 
 async fn process_stream(stream: TcpStream) -> Result<(), MyError> {
-    let mut frames = Framed::new(stream, SizedCodec::default());
+    let (tx, rx) = mpsc::unbounded_channel();
 
-    let mut state = State::Handshaking;
+    let mut connection = Connection::new(tx);
+    let (sink, stream) = Framed::new(stream, SizedCodec::default()).split();
 
-    while let Some(frame) = frames.next().await {
-        println!("received a packet");
+    let to_user = rx
+        .map(|bytes| Ok(bytes))
+        .forward(sink);
 
-        match state {
-            State::Handshaking => {
-                let packet: HandshakingPacket = Deserializer::from(frame?).deserialize().unwrap();
+    let from_user = stream
+        .for_each(|packet| future::ready(connection.handle(&mut packet.unwrap())));
 
-                match packet {
-                    HandshakingPacket::Handshake(packet) => {
-                        state = match packet.next_state {
-                            NextState::Login => State::Login,
-                            NextState::Status => State::Status
-                        }
-                    }
-                }
-            },
-            State::Status => {
-                let packet: StatusPacket = Deserializer::from(frame?).deserialize().unwrap();
-
-                match packet {
-                    StatusPacket::Request(_) => {
-                        use protocol::packets::status::clientbound as status_clientbound;
-                        let response = status_clientbound::Packet::Response(status_clientbound::Response {
-                            json_response: status_clientbound::JsonResponse {
-                                version: status_clientbound::JsonResponseVersion {
-                                    name: "1.15.1".to_string(),
-                                    protocol: 575
-                                },
-                                description: status_clientbound::JsonResponseDescription {
-                                    text: "Ptdr ça marche enfin".to_string()
-                                },
-                                players: status_clientbound::JsonResponsePlayers {
-                                    max: 5,
-                                    online: 0,
-                                    sample: Vec::new()
-                                },
-                                favicon: String::new()
-                            }
-                        });
-
-                        use ::io::Serializer;
-                        let mut serializer = Serializer::default();
-                        serializer.serialize(&response)?;
-                        frames.send(serializer.into()).await?;
-                    },
-                    StatusPacket::Ping(ping) => {
-                        use protocol::packets::status::clientbound as status_clientbound;
-                        let response = status_clientbound::Packet::Pong(status_clientbound::Pong {
-                            payload: ping.payload
-                        });
-
-                        use ::io::Serializer;
-                        let mut serializer = Serializer::default();
-                        serializer.serialize(&response)?;
-                        frames.send(serializer.into()).await?;
-                    }
-                }
-            },
-            _ => unimplemented!()
-        }
-    }
-
+    let _ = future::join(to_user, from_user).await;
     Ok(())
 }
 
