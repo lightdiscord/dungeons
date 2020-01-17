@@ -2,7 +2,8 @@ use crate::handlers::Handler;
 use io::connection::Connection;
 use protocol::packets::status as status_packets;
 use status_packets::serverbound::Request;
-use status_packets::clientbound::{Packet as ClientboundPacket, Response, JsonResponse, JsonResponseVersion, JsonResponseDescription, JsonResponsePlayers};
+use status_packets::clientbound::{Packet as ClientboundPacket, Response};
+use status_packets::clientbound::json_response::*;
 
 impl Handler for Request {
     type Context = Connection;
