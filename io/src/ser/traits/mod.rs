@@ -1,6 +1,6 @@
 use serde::Serialize;
 use bytes::{Bytes, BytesMut, Buf};
-use crate::Error;
+use crate::error::Result;
 
 pub use super::Serializer;
 
@@ -14,7 +14,7 @@ mod serialize_struct_variant;
 mod serialize_map;
 
 impl Serializer {
-    pub fn serialize<T>(&mut self, item: &T) -> Result<(), Error>
+    pub fn serialize<T>(&mut self, item: &T) -> Result<()>
     where
         T: Serialize
     {

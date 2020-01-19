@@ -1,10 +1,8 @@
-use crate::Error;
 use serde::ser;
 use super::Serializer;
 use bytes::BufMut;
 use crate::types::Var;
-
-type Result<T> = std::result::Result<T, Error>;
+use crate::error::{Result, Error};
 
 macro_rules! serialize_unimplemented {
     ($($return:ty => [$($fn:ident$(($($type:ty),*))*),*]),*) => {

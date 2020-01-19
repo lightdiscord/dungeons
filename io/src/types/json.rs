@@ -1,6 +1,5 @@
 use std::marker::PhantomData;
 use std::fmt;
-use crate::Error;
 use serde::{ser, de};
 use serde_json;
 
@@ -20,9 +19,7 @@ where
     where
         E: de::Error
     {
-        serde_json::from_str(value)
-            .map_err(Error::JsonError)
-            .map_err(de::Error::custom)
+        serde_json::from_str(value).map_err(de::Error::custom)
     }
 }
 
@@ -31,9 +28,7 @@ where
     T: ser::Serialize,
     S: ser::Serializer
 {
-    let string = serde_json::to_string(value)
-        .map_err(Error::JsonError)
-        .map_err(ser::Error::custom)?;
+    let string = serde_json::to_string(value).map_err(ser::Error::custom)?;
     serializer.serialize_str(&string)
 }
 
@@ -47,10 +42,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use serde::{Serialize, Deserialize};
-    use crate::{Serializer, Deserializer};
+    use crate::{Serializer, Deserializer, Error};
     use bytes::Bytes;
+    use failure::Fallible;
 
     #[derive(Debug, Deserialize, Serialize, PartialEq)]
     struct Data {
@@ -92,7 +87,7 @@ mod tests {
     }
 
     #[test]
-    fn test_deserialize_json_string() -> Result<(), Error> {
+    fn test_deserialize_json_string() -> Fallible<()> {
         let json: &[u8] = br#"{"string":"test","b":true,"n":42}"#;
         let bytes = [&[33], json].concat();
         let bytes = Bytes::from(bytes);

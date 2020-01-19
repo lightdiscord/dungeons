@@ -27,7 +27,7 @@ macro_rules! packets {
         mod __impl_packets_traits {
             use serde::de::{self, Visitor, SeqAccess, Deserialize, Deserializer};
             use $crate::types::Var;
-            use $crate::Error;
+            use $crate::error::PacketError;
             use super::Packet;
             use std::fmt;
 
@@ -44,9 +44,9 @@ macro_rules! packets {
                 where
                     A: SeqAccess<'de>
                 {
-                    match *seq.next_element::<Var<i32>>()?.unwrap() {
-                        $($id => Ok(Packet::$packet(seq.next_element()?.unwrap()))),+,
-                        _ => Err(de::Error::custom(Error::UnknownPacket))
+                    match *seq.next_element::<Var<i32>>()?.ok_or(de::Error::custom(PacketError::NoneError))? {
+                        $($id => Ok(Packet::$packet(seq.next_element()?.ok_or(de::Error::custom(PacketError::NoneError))?))),+,
+                        _ => Err(de::Error::custom(PacketError::UnknownPacket))
                     }
                 }
             }
@@ -101,8 +101,9 @@ macro_rules! packets {
 #[cfg(test)]
 mod tests {
     use serde::{Deserialize, Serialize};
-    use crate::{Deserializer, Serializer, Error};
+    use crate::{Deserializer, Serializer};
     use crate::types::Var;
+    use failure::Fallible;
 
     #[derive(Debug, Deserialize, Serialize, PartialEq)]
     pub struct PacketData {
@@ -134,7 +135,7 @@ mod tests {
         }
 
         #[test]
-        fn test_packet_deserialization() -> Result<(), Error> {
+        fn test_packet_deserialization() -> Fallible<()> {
             let packet: Packet = Deserializer::from(Bytes::from(EXPECTED_PACKET_BYTES)).deserialize()?;
             
             assert_eq!(packet, Packet::PacketData(packet_data()));
@@ -154,7 +155,7 @@ mod tests {
         }
 
         #[test]
-        fn test_packet_deserialization() -> Result<(), Error> {
+        fn test_packet_deserialization() -> Fallible<()> {
             let mut serializer = Serializer::default();
             let _ = serializer.serialize(&Packet::PacketData(packet_data()))?;
             

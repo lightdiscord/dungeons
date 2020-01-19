@@ -9,11 +9,11 @@ pub struct Serializer(BytesMut);
 mod tests {
     use serde::Serialize;
     use crate::types::Var;
-    use crate::Error;
     use super::Serializer;
+    use failure::Fallible;
 
     #[test]
-    fn test_structure_deserialization() -> Result<(), Error> {
+    fn test_structure_deserialization() -> Fallible<()> {
         #[derive(Debug, Serialize, PartialEq)]
         struct Structure {
             var_int: Var<i32>,

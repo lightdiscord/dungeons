@@ -1,10 +1,8 @@
-use tokio_util::codec::{Decoder, Encoder};
-use bytes::{BytesMut, Bytes, Buf};
-use std::io::Error as IoError;
-
 use crate::types::var::Var;
 use crate::Deserializer;
-use crate::Error;
+use tokio_util::codec::{Decoder, Encoder};
+use bytes::{BytesMut, Bytes, Buf};
+use failure::{Fallible, Error};
 
 enum DecodeState {
     Head,
@@ -21,7 +19,7 @@ pub struct SizedCodec {
 }
 
 impl SizedCodec {
-    fn decode_head(&mut self, src: &mut BytesMut) -> Result<Option<usize>, Error> {
+    fn decode_head(&mut self, src: &mut BytesMut) -> Fallible<Option<usize>> {
         let header_length = match Var::<i32>::count(&src[..])? {
             Some(n) => n,
             None => return Ok(None)
@@ -39,7 +37,7 @@ impl Decoder for SizedCodec {
     type Item = Bytes;
     type Error = Error;
 
-    fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
+    fn decode(&mut self, src: &mut BytesMut) -> Fallible<Option<Self::Item>> {
         let length = match self.state {
             DecodeState::Head => match self.decode_head(src)? {
                 Some(n) => {
@@ -66,12 +64,12 @@ use crate::Serializer;
 
 impl Encoder for SizedCodec {
     type Item = Bytes;
-    type Error = IoError;
+    type Error = Error;
 
-    fn encode(&mut self, item: Self::Item, dest: &mut BytesMut) -> Result<(), Self::Error> {
+    fn encode(&mut self, item: Self::Item, dest: &mut BytesMut) -> Fallible<()> {
         let packet_header: Bytes = {
             let mut serializer = Serializer::default();
-            serializer.serialize(&Var(item.len() as i32)).unwrap();
+            serializer.serialize(&Var(item.len() as i32))?;
             serializer.into()
         };
 

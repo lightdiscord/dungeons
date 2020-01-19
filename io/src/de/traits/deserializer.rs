@@ -1,11 +1,9 @@
-use crate::Error;
+use crate::error::{Result, Error};
 use crate::types::Var;
 use serde::de::{self, Visitor, DeserializeSeed};
 use bytes::Buf;
 
 use super::Deserializer;
-
-type Result<T> = std::result::Result<T, Error>;
 
 type StaticStr = &'static str;
 

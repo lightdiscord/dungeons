@@ -2,32 +2,19 @@
 
 mod handlers;
 
-use std::io;
-
-use futures::future;
-use futures::stream::StreamExt;
+use crate::handlers::Handler;
+use io::codec::sized::SizedCodec;
+use io::Connection;
+use futures::future::{self, TryFutureExt};
+use futures::stream::{TryStreamExt, StreamExt};
 use tokio::net::{TcpStream, TcpListener};
+use tokio::sync::mpsc;
+use tokio_util::codec::Framed;
+use failure::Fallible;
 
 const ADDRESS: &'static str = "127.0.0.1:25565";
 
-use ::io::codec::sized::SizedCodec;
-use ::io::error::Error as MyError;
-
-#[allow(dead_code)]
-enum State {
-    Handshaking,
-    Login,
-    Status,
-    Play
-}
-
-use tokio::sync::mpsc;
-
-use crate::handlers::Handler;
-use tokio_util::codec::Framed;
-use ::io::Connection;
-
-async fn process_stream(stream: TcpStream) -> Result<(), MyError> {
+async fn process_stream(stream: TcpStream) -> Fallible<()> {
     let (tx, rx) = mpsc::unbounded_channel();
 
     let mut connection = Connection::new(tx);
@@ -38,14 +25,15 @@ async fn process_stream(stream: TcpStream) -> Result<(), MyError> {
         .forward(sink);
 
     let from_user = stream
-        .for_each(|packet| future::ready(connection.handle(&mut packet.unwrap())));
+        .try_for_each(|mut packet| future::ready(connection.handle(&mut packet)))
+        .into_future();
 
-    let _ = future::join(to_user, from_user).await;
+    future::try_join(to_user, from_user).await?;
     Ok(())
 }
 
 #[tokio::main]
-async fn main() -> io::Result<()> {
+async fn main() -> Fallible<()> {
     let mut listener = TcpListener::bind(ADDRESS).await?;
 
     loop {

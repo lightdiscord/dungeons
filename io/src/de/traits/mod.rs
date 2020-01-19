@@ -1,6 +1,6 @@
 use serde::Deserialize;
 use bytes::Bytes;
-use crate::Error;
+use crate::error::Result;
 
 pub use super::Deserializer;
 
@@ -11,7 +11,7 @@ impl From<Bytes> for Deserializer {
 }
 
 impl<'a> Deserializer {
-    pub fn deserialize<T>(&mut self) -> Result<T, Error>
+    pub fn deserialize<T>(&mut self) -> Result<T>
     where
         T: Deserialize<'a>
     {

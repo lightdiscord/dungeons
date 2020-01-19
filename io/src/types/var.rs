@@ -28,7 +28,7 @@ impl Var<i32> {
             }
         }
 
-        Err(de::Error::custom(Error::VarIntTooBig))
+        Err(de::Error::invalid_length(6, &"varint"))
     }
 }
 
@@ -38,33 +38,31 @@ pub mod varint {
     use super::*;
     use serde::de::Deserialize;
 
-    impl <'de> Visitor<'de> for VarVisitor<i32> {
+    impl<'de> Visitor<'de> for VarVisitor<i32> {
         type Value = i32;
 
         fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
             formatter.write_str("varint")
         }
 
-        fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
-            let mut idx = 0;
+        fn visit_seq<S>(self, mut seq: S) -> Result<Self::Value, S::Error> 
+        where
+            S: SeqAccess<'de>,
+        {
             let mut result: i32 = 0;
 
-            loop {
-                let byte: u8 = seq.next_element()?
-                    .ok_or(Error::NoneError)
-                    .map_err(de::Error::custom)?;
+            for idx in 0..5 {
+                let byte: u8 = seq.next_element()?.ok_or(de::Error::invalid_length(idx, &self))?;
 
                 let value = byte & 0b01111111;
                 result |= (value as i32) << (7 * idx);
-                idx += 1;
 
-                if idx > 5 {
-                    return Err(de::Error::custom(Error::VarIntTooBig));
+                if (byte & 0b10000000) == 0 {
+                    return Ok(result)
                 }
-                if (byte & 0b10000000) == 0 { break; }
             }
 
-            Ok(result)
+            Err(de::Error::invalid_length(6, &self))
         }
     }
 
@@ -126,6 +124,7 @@ where
 mod tests {
     use super::*;
 
+    use failure::Fallible;
     use bytes::Bytes;
     use crate::{Deserializer, Serializer};
 
@@ -142,7 +141,7 @@ mod tests {
     ];
 
     #[test]
-    fn test_varint_deserialization() -> Result<(), Error> {
+    fn test_varint_deserialization() -> Fallible<()> {
         for &(value, bytes) in VARS {
             assert_eq!(
                 value,

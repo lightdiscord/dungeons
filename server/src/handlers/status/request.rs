@@ -4,11 +4,12 @@ use protocol::packets::status as status_packets;
 use status_packets::serverbound::Request;
 use status_packets::clientbound::{Packet as ClientboundPacket, Response};
 use status_packets::clientbound::json_response::*;
+use failure::Fallible;
 
 impl Handler for Request {
     type Context = Connection;
 
-    fn handle(&mut self, connection: &mut Self::Context) {
+    fn handle(&mut self, connection: &mut Self::Context) -> Fallible<()> {
         let response = ClientboundPacket::Response(Response {
             json_response: JsonResponse {
                 version: JsonResponseVersion {
@@ -27,7 +28,7 @@ impl Handler for Request {
             }
         });
 
-        connection.send(&response);
+        connection.send(&response)
     }
 }
 

@@ -8,12 +8,12 @@ pub struct Deserializer(Bytes);
 mod tests {
     use serde::Deserialize;
     use crate::types::Var;
-    use crate::Error;
     use super::Deserializer;
     use bytes::Bytes;
+    use crate::error::Result;
 
     #[test]
-    fn test_structure_deserialization() -> Result<(), Error> {
+    fn test_structure_deserialization() -> Result<()> {
         #[derive(Debug, Deserialize, PartialEq)]
         struct Structure {
             var_int: Var<i32>,

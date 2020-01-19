@@ -2,6 +2,7 @@ use crate::Serializer;
 use tokio::sync::mpsc::UnboundedSender;
 use serde::Serialize;
 use bytes::Bytes;
+use failure::Fallible;
 
 pub enum ConnectionState {
     Handshaking,
@@ -26,13 +27,13 @@ impl Connection {
         }
     }
 
-    // TODO: Result return type
-    pub fn send<P>(&self, item: &P)
+    pub fn send<P>(&self, item: &P) -> Fallible<()>
     where
         P: Serialize
     {
         let mut serializer = Serializer::default();
-        serializer.serialize(item).unwrap();
-        self.tx.send(serializer.into()).unwrap();
+        serializer.serialize(item)?;
+        self.tx.send(serializer.into())?;
+        Ok(())
     }
 }
