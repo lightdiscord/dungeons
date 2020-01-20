@@ -21,7 +21,7 @@ async fn process_stream(stream: TcpStream) -> Fallible<()> {
     let (sink, stream) = Framed::new(stream, SizedCodec::default()).split();
 
     let to_user = rx
-        .map(|bytes| Ok(bytes))
+        .map(Ok)
         .forward(sink);
 
     let from_user = stream

@@ -1,4 +1,4 @@
-#![feature(try_trait)]
+#![feature(try_trait, const_generics)]
 
 pub mod types;
 pub mod error;

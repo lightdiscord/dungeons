@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::convert::TryFrom;
 use io::packets;
-use io::types::Var;
+use io::types::{Var, MaxedString};
 use io::connection::ConnectionState;
 
 use crate::error::Error;
@@ -38,7 +38,7 @@ impl Into<ConnectionState> for NextState {
 pub struct Handshake {
     #[serde(with = "::io::types::var")]
     pub protocol_version: i32,
-    pub server_address: String,
+    pub server_address: MaxedString<255>,
     pub server_port: u16,
     pub next_state: NextState
 }
