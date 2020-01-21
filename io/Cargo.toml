@@ -13,3 +13,4 @@ failure = "0.1"
 bytes = { version = "0.5", features = ["serde"] }
 tokio = { version = "0.2", features = ["sync"] }
 tokio-util = { version = "0.2", features = ["codec"] }
+log = "0.4"

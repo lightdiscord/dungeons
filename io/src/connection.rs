@@ -3,6 +3,7 @@ use tokio::sync::mpsc::UnboundedSender;
 use serde::Serialize;
 use bytes::Bytes;
 use failure::Fallible;
+use log::trace;
 
 pub enum ConnectionState {
     Handshaking,
@@ -40,9 +41,9 @@ impl Connection {
     {
         let mut serializer = Serializer::default();
         serializer.serialize(item)?;
-        let tmp = serializer.into();
-        println!("bytes sent: {:?}", tmp);
-        self.tx.send(ConnectionEvent::Message(tmp))?;
+        let bytes: Bytes = serializer.into();
+        trace!("bytes sent: {:?}", bytes.as_ref());
+        self.tx.send(ConnectionEvent::Message(bytes))?;
         Ok(())
     }
 

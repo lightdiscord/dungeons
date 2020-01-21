@@ -15,6 +15,7 @@ use bytes::Bytes;
 use tokio::sync::mpsc::UnboundedReceiver;
 use futures::stream::{SplitSink, SplitStream};
 use io::connection::{Connection, ConnectionEvent};
+use log::{info, error};
 
 const ADDRESS: &'static str = "127.0.0.1:25565";
 
@@ -37,8 +38,11 @@ async fn handle_each_packet(mut stream: SplitStream<Framed<TcpStream, SizedCodec
     connection.close()
 }
 
-async fn process_stream(stream: TcpStream) -> Fallible<()> {
+async fn process_stream(stream: TcpStream) {
     let (tx, mut rx) = mpsc::unbounded_channel();
+    let peer_addr = stream.peer_addr().unwrap();
+
+    info!("connection '{}' opened", peer_addr);
 
     let connection = Connection::new(tx);
     let (sink, stream) = Framed::new(stream, SizedCodec::default()).split();
@@ -46,15 +50,16 @@ async fn process_stream(stream: TcpStream) -> Fallible<()> {
     let to_client = forward_to_sink(sink, &mut rx);
     let from_client = handle_each_packet(stream, connection);
 
-    let result = future::try_join(to_client, from_client).await;
-
-    println!("connection closed: {:?}", result);
-
-    result.map(|_| ())
+    match future::try_join(to_client, from_client).await {
+        Ok(_) => info!("connection '{}' closed with success", peer_addr),
+        Err(error) => error!("connection '{}' closed with an error ({})", peer_addr, error)
+    }
 }
 
 #[tokio::main]
 async fn main() -> Fallible<()> {
+    env_logger::init();
+
     let mut listener = TcpListener::bind(ADDRESS).await?;
 
     loop {

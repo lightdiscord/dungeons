@@ -14,3 +14,5 @@ tokio = { version = "0.2", features = ["full"] }
 tokio-util = { version = "0.2", features = ["codec"] }
 bytes = "0.5"
 futures = "0.3"
+env_logger = "0.7"
+log = "0.4"
