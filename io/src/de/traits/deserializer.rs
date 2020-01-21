@@ -94,10 +94,17 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer {
         self.deserialize_seq(visitor)
     }
 
+    fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value>
+    where
+        V: Visitor<'de>
+    {
+        let length = *self.deserialize::<Var<i32>>()? as usize;
+        visitor.visit_bytes(&self.0.split_to(length))
+    }
+
     deserialize_unimplemented! {
         deserialize_any,
         deserialize_bool,
-        deserialize_byte_buf,
         deserialize_char,
         deserialize_f32,
         deserialize_f64,

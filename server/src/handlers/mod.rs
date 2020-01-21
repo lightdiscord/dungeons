@@ -1,11 +1,15 @@
 mod handshaking;
 mod status;
+mod login;
+mod play;
 
 use bytes::Bytes;
 use io::Deserializer;
 use io::connection::{Connection, ConnectionState};
 use protocol::packets::handshaking::serverbound::Packet as HandshakingPacket;
 use protocol::packets::status::serverbound::Packet as StatusPacket;
+use protocol::packets::login::serverbound::Packet as LoginPacket;
+use protocol::packets::play::serverbound::Packet as PlayPacket;
 use failure::Fallible;
 
 pub trait Handler {
@@ -30,7 +34,13 @@ impl Handler for Connection {
             },
 
             ConnectionState::Login => {
-                unimplemented!()
+                let mut packet: LoginPacket = Deserializer::from(bytes.clone()).deserialize()?;
+                packet.handle(self)
+            },
+
+            ConnectionState::Play => {
+                let mut packet: PlayPacket = Deserializer::from(bytes.clone()).deserialize()?;
+                packet.handle(self)
             }
         }
     }

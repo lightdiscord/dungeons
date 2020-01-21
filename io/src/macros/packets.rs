@@ -46,7 +46,7 @@ macro_rules! packets {
                 {
                     match *seq.next_element::<Var<i32>>()?.ok_or(de::Error::custom(PacketError::NoneError))? {
                         $($id => Ok(Packet::$packet(seq.next_element()?.ok_or(de::Error::custom(PacketError::NoneError))?))),+,
-                        _ => Err(de::Error::custom(PacketError::UnknownPacket))
+                        id => Err(de::Error::custom(PacketError::UnknownPacket(id)))
                     }
                 }
             }

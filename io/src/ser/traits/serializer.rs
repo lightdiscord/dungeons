@@ -27,6 +27,10 @@ impl ser::Serializer for &'_ mut Serializer {
     type SerializeStruct = Self;
     type SerializeStructVariant = Self;
 
+    fn serialize_bool(self, value: bool) -> Result<()> {
+        self.serialize_u8(if value { 1 } else { 0 })
+    }
+
     fn serialize_u8(self, value: u8) -> Result<()> {
         self.0.put_u8(value);
         Ok(())
@@ -34,6 +38,16 @@ impl ser::Serializer for &'_ mut Serializer {
 
     fn serialize_u64(self, value: u64) -> Result<()> {
         self.0.put_u64(value);
+        Ok(())
+    }
+
+    fn serialize_i32(self, value: i32) -> Result<()> {
+        self.0.put_i32(value);
+        Ok(())
+    }
+
+    fn serialize_u32(self, value: u32) -> Result<()> {
+        self.0.put_u32(value);
         Ok(())
     }
 
@@ -59,17 +73,14 @@ impl ser::Serializer for &'_ mut Serializer {
 
     serialize_unimplemented! {
         Self::Ok => [
-            serialize_bool(bool),
             serialize_char(char),
             serialize_f32(f32),
             serialize_f64(f64),
             serialize_i16(i16),
             serialize_u16(u16),
-            serialize_i32(i32),
             serialize_i64(i64),
             serialize_i8(i8),
             serialize_unit_struct(&str),
-            serialize_u32(u32),
             serialize_bytes(&[u8]),
             serialize_unit,
             serialize_none,

@@ -7,20 +7,27 @@ use failure::Fallible;
 pub enum ConnectionState {
     Handshaking,
     Login,
-    Status
+    Status,
+    Play
 }
 
 impl Default for ConnectionState {
     fn default() -> Self { ConnectionState::Handshaking }
 }
 
+#[derive(Debug)]
+pub enum ConnectionEvent {
+    Message(Bytes),
+    Close
+}
+
 pub struct Connection {
     pub state: ConnectionState,
-    tx: UnboundedSender<Bytes>
+    tx: UnboundedSender<ConnectionEvent>
 }
 
 impl Connection {
-    pub fn new(tx: UnboundedSender<Bytes>) -> Self {
+    pub fn new(tx: UnboundedSender<ConnectionEvent>) -> Self {
         Connection {
             state: Default::default(),
             tx
@@ -33,7 +40,13 @@ impl Connection {
     {
         let mut serializer = Serializer::default();
         serializer.serialize(item)?;
-        self.tx.send(serializer.into())?;
+        let tmp = serializer.into();
+        println!("bytes sent: {:?}", tmp);
+        self.tx.send(ConnectionEvent::Message(tmp))?;
         Ok(())
+    }
+
+    pub fn close(&self) -> Fallible<()> {
+        Ok(self.tx.send(ConnectionEvent::Close)?)
     }
 }

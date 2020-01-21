@@ -5,6 +5,12 @@ use std::fmt;
 #[derive(Debug, PartialEq)]
 pub struct MaxedString<const M: usize>(String);
 
+impl<const M: usize> From<String> for MaxedString<M> {
+    fn from(src: String) -> Self {
+        MaxedString(src)
+    }
+}
+
 struct MaxedVisitor<const M: usize>;
 
 impl<'de, const M: usize> Visitor<'de> for MaxedVisitor<M> {
@@ -15,7 +21,7 @@ impl<'de, const M: usize> Visitor<'de> for MaxedVisitor<M> {
     }
 
     fn visit_str<E: de::Error>(self, value: &str) -> Result<Self::Value, E> {
-        if value.len() > M {
+        if value.as_bytes().len() > M {
             return Err(de::Error::invalid_length(value.len(), &self))
         }
 
@@ -32,8 +38,8 @@ impl<'de, const M: usize> Deserialize<'de> for MaxedString<M> {
 
 impl<'de, const M: usize> Serialize for MaxedString<M> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
-        if self.0.len() > M {
-            return Err(ser::Error::custom("maxed string exceed max value"))
+        if self.0.as_bytes().len() > M {
+            return Err(ser::Error::custom("maxed-string exceed max value"))
         }
 
         serializer.serialize_str(&self.0)

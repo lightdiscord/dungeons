@@ -6,8 +6,8 @@ use serde::{de, ser};
 
 #[derive(Debug, Fail)]
 pub enum PacketError {
-    #[fail(display = "unknown packet id")]
-    UnknownPacket,
+    #[fail(display = "unknown packet id: 0x{:x}", _0)]
+    UnknownPacket(i32),
 
     #[fail(display = "option with some variant expected but got none")]
     NoneError
