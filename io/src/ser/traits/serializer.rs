@@ -51,6 +51,16 @@ impl ser::Serializer for &'_ mut Serializer {
         Ok(())
     }
 
+    fn serialize_f64(self, value: f64) -> Result<()> {
+        self.0.put_f64(value);
+        Ok(())
+    }
+
+    fn serialize_f32(self, value: f32) -> Result<()> {
+        self.0.put_f32(value);
+        Ok(())
+    }
+
     fn serialize_str(self, value: &str) -> Result<()> {
         self.serialize(&Var(value.len() as i32))?;
         self.0.extend_from_slice(value.as_bytes());
@@ -74,8 +84,6 @@ impl ser::Serializer for &'_ mut Serializer {
     serialize_unimplemented! {
         Self::Ok => [
             serialize_char(char),
-            serialize_f32(f32),
-            serialize_f64(f64),
             serialize_i16(i16),
             serialize_u16(u16),
             serialize_i64(i64),

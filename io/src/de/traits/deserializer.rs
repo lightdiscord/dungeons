@@ -49,6 +49,13 @@ impl<'de, 'a> de::SeqAccess<'de> for SeqAccess<'a> {
 impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer {
     type Error = Error;
 
+    fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value>
+    where
+        V: Visitor<'de>
+    {
+        visitor.visit_bool((self.0).get_u8() != 0)
+    }
+
     fn deserialize_string<V>(self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>
@@ -104,10 +111,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer {
 
     deserialize_unimplemented! {
         deserialize_any,
-        deserialize_bool,
         deserialize_char,
-        deserialize_f32,
-        deserialize_f64,
         deserialize_i16,
         deserialize_i32,
         deserialize_i64,
@@ -127,6 +131,8 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer {
     deserialize_simple! {
         (deserialize_u8, visit_u8, get_u8),
         (deserialize_u16, visit_u16, get_u16),
-        (deserialize_u64, visit_u64, get_u64)
+        (deserialize_u64, visit_u64, get_u64),
+        (deserialize_f32, visit_f32, get_f32),
+        (deserialize_f64, visit_f64, get_f64)
     }
 }

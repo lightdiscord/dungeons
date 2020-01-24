@@ -11,6 +11,7 @@ use protocol::packets::status::serverbound::Packet as StatusPacket;
 use protocol::packets::login::serverbound::Packet as LoginPacket;
 use protocol::packets::play::serverbound::Packet as PlayPacket;
 use failure::Fallible;
+use log::trace;
 
 pub trait Handler {
     type Context;
@@ -22,6 +23,8 @@ impl Handler for Connection {
     type Context = Bytes;
 
     fn handle(&mut self, bytes: &mut Self::Context) -> Fallible<()> {
+        trace!("during state {:?}, received bytes: {:?}", self.state, bytes.as_ref());
+
         match self.state {
             ConnectionState::Handshaking => {
                 let mut packet: HandshakingPacket = Deserializer::from(bytes.clone()).deserialize()?;

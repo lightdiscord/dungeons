@@ -5,7 +5,7 @@ use protocol::packets::login as login_packets;
 use login_packets::serverbound::LoginStart;
 use login_packets::clientbound::{ Packet as ClientboundPacket, LoginSuccess };
 use protocol::packets::play as play_packets;
-use play_packets::clientbound::{ Packet as PlayPacket, JoinGame, Dimension, Gamemode };
+use play_packets::clientbound::{ Packet as PlayPacket, JoinGame, PlayerPositionAndLook, Dimension, Gamemode };
 use failure::Fallible;
 
 impl Handler for LoginStart {
@@ -27,7 +27,7 @@ impl Handler for LoginStart {
             entity_id: 0,
             gamemode: Gamemode::Spectator,
             dimension: Dimension::Overworld,
-            hashed_seed: 0xffffffff,
+            hashed_seed: 0xfff00fff,
             max_player: 5,
             level_type: "default".to_string(),
             view_distance: Var(3),
@@ -44,7 +44,19 @@ impl Handler for LoginStart {
         //});
 
         connection.send(&packet)?;
-        
+
+        let packet = PlayPacket::PlayerPositionAndLook(PlayerPositionAndLook {
+            x: 0.0,
+            y: 100.0,
+            z: 0.0,
+            yaw: 0.0,
+            pitch: 0.0,
+            flags: 0,
+            teleport_id: Var(0)
+        });
+
+        connection.send(&packet)?;
+
         Ok(())
     }
 }

@@ -5,6 +5,7 @@ use bytes::Bytes;
 use failure::Fallible;
 use log::trace;
 
+#[derive(Debug)]
 pub enum ConnectionState {
     Handshaking,
     Login,

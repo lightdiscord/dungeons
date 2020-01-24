@@ -13,8 +13,8 @@ impl Handler for Request {
         let response = ClientboundPacket::Response(Response {
             json_response: JsonResponse {
                 version: JsonResponseVersion {
-                    name: "1.15.1".to_string(),
-                    protocol: 575
+                    name: "1.15.2".to_string(),
+                    protocol: 578
                 },
                 description: JsonResponseDescription {
                     text: "Ptdr ça marche enfin".to_string()

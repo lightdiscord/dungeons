@@ -74,8 +74,21 @@ pub struct JoinGame {
     pub enable_respawn_screen: bool
 }
 
+#[derive(Debug, Serialize)]
+pub struct PlayerPositionAndLook {
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub yaw: f32,
+    pub pitch: f32,
+    // TODO: Create a type (useful to know if x/y/z/yaw/pitch are relative or absolute)
+    pub flags: u8,
+    pub teleport_id: Var<i32>
+}
+
 packets! {
     clientbound {
-        0x26 => JoinGame
+        0x26 => JoinGame,
+        0x36 => PlayerPositionAndLook
     }
 }
