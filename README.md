@@ -6,7 +6,7 @@ A work-in-progress project of a dungeon-minecraft-server written in rust.
 
 ### With nix
 
-```
+```console
 $ # $LOG_LEVEL will default to "trace" if not specified.
 $ nix-shell --run "dev-watch $LOG_LEVEL"
 ```
