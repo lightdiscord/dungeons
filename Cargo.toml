@@ -2,5 +2,6 @@
 members = [
 	"protocol",
 	"io",
-	"server"
+	"server",
+	"world"
 ]
